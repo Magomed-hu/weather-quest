@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Weather Quest 🎮</title>
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Фон */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -4;
+    transition: background 1s ease;
+    background: linear-gradient(180deg, #ccefff, #88ccff); /* светлый мультяшный небесный */
+}
+
+/* Градиенты для разных погод */
+body.sun::before { background: linear-gradient(180deg, #fceabb, #f8b500); }
+body.rain::before { background: linear-gradient(180deg, #4b79a1, #283e51); }
+body.snow::before { background: linear-gradient(180deg, #e6dada, #274046); }
+body.clouds::before { background: linear-gradient(180deg, #bdc3c7, #2c3e50); }
+
+/* Карточка с погодой */
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    width: 380px;
+    text-align: center;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.25);
+    animation: spawn 0.7s ease-out;
+    position: relative;
+    z-index: 2;
+}
+
+@keyframes spawn {
+    from { transform: scale(0.7) translateY(40px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+input, button {
+    font-size: 16px;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin: 5px 0;
+}
+
+button {
+    border: none;
+    cursor: pointer;
+    color: white;
+    background: linear-gradient(135deg, #4CAF50, #2ecc71);
+    transition: 0.25s;
+}
+button:hover { transform: scale(1.07); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+button:active { transform: scale(0.97); }
+
+img { width: 80px; }
+.history { margin-top: 15px; font-size: 14px; color: #555; }
+
+/* Контейнер для эффектов */
+.weather-effect {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: -3;
+}
+
+/* Мультяшные облака */
+.cloud {
+    position: absolute;
+    top: 10%;
+    width: 100px; height: 60px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 50%;
+    animation: moveCloud linear infinite;
+}
+
+@keyframes moveCloud {
+    0% { transform: translateX(-150px); }
+    100% { transform: translateX(110vw); }
+}
+
+/* Солнце */
+.sun {
+    position: absolute;
+    width: 80px; height: 80px;
+    background: yellow;
+    border-radius: 50%;
+    top: 10%;
+    right: 10%;
+    animation: rotateSun 10s linear infinite;
+    box-shadow: 0 0 30px 10px yellow;
+}
+
+@keyframes rotateSun {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Птицы */
+.bird {
+    position: absolute;
+    width: 30px; height: 20px;
+    background: black;
+    clip-path: polygon(0 50%, 50% 0, 100% 50%, 50% 100%);
+    animation: flyBird linear infinite;
+}
+
+@keyframes flyBird {
+    0% { transform: translateX(-50px) translateY(50px) rotate(0deg); }
+    100% { transform: translateX(110vw) translateY(50px) rotate(360deg); }
+}
+
+/* Дождь */
+.rain-drop {
+    position: absolute;
+    width: 2px; height: 15px;
+    background: rgba(173,216,230,0.7);
+    animation: fall linear infinite;
+}
+
+@keyframes fall {
+    0% { transform: translateY(-20px); opacity: 1; }
+    100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* Снег */
+.snowflake {
+    position: absolute;
+    width: 5px; height: 5px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0.8;
+    animation: snowFall linear infinite;
+}
+
+@keyframes snowFall {
+    0% { transform: translateY(-10px); opacity: 0.8; }
+    100% { transform: translateY(100vh); opacity: 0; }
+}
+</style>
+</head>
+<body class="default">
+
+<div class="card">
+    <h2>🌍 Weather Quest</h2>
+    <input id="city" placeholder="Введите город">
+    <button onclick="getWeather()">Узнать погоду</button>
+    <div id="result"></div>
+    <div class="history" id="history"></div>
+</div>
+
+<div class="weather-effect" id="weatherEffect"></div>
+
+<script>
+const weatherEffect = document.getElementById('weatherEffect');
+
+function clearEffects() {
+    weatherEffect.innerHTML = '';
+}
+
+function createClouds(count=5){
+    for(let i=0;i<count;i++){
+        const cloud=document.createElement('div');
+        cloud.className='cloud';
+        cloud.style.top=Math.random()*50+'%';
+        cloud.style.width=80+Math.random()*50+'px';
+        cloud.style.height=40+Math.random()*30+'px';
+        cloud.style.animationDuration=20+Math.random()*15+'s';
+        cloud.style.animationDelay=Math.random()*5+'s';
+        weatherEffect.appendChild(cloud);
+    }
+}
+
+function createSun(){
+    const sun=document.createElement('div');
+    sun.className='sun';
+    weatherEffect.appendChild(sun);
+}
+
+function createBirds(count=3){
+    for(let i=0;i<count;i++){
+        const bird=document.createElement('div');
+        bird.className='bird';
+        bird.style.top=10+Math.random()*40+'%';
+        bird.style.animationDuration=5+Math.random()*5+'s';
+        bird.style.animationDelay=Math.random()*5+'s';
+        weatherEffect.appendChild(bird);
+    }
+}
+
+function createRain(count=100){
+    for(let i=0;i<count;i++){
+        const drop=document.createElement('div');
+        drop.className='rain-drop';
+        drop.style.left=Math.random()*100+'vw';
+        drop.style.animationDuration=0.5+Math.random()*0.5+'s';
+        drop.style.animationDelay=Math.random()*2+'s';
+        weatherEffect.appendChild(drop);
+    }
+}
+
+function createSnow(count=80){
+    for(let i=0;i<count;i++){
+        const snow=document.createElement('div');
+        snow.className='snowflake';
+        snow.style.left=Math.random()*100+'vw';
+        snow.style.width=3+Math.random()*4+'px';
+        snow.style.height=snow.style.width;
+        snow.style.animationDuration=5+Math.random()*5+'s';
+        snow.style.animationDelay=Math.random()*5+'s';
+        weatherEffect.appendChild(snow);
+    }
+}
+
+async function getWeather(){
+    const city=document.getElementById('city').value.trim();
+    if(!city) return;
+
+    try {
+        const response = await fetch("/weather",{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({city})
+        });
+        const data = await response.json();
+        if(data.error){
+            document.getElementById('result').textContent = data.error;
+            return;
+        }
+
+        document.body.className='';
+        setTimeout(()=>document.body.className = data.background, 10);
+
+        clearEffects();
+
+        // добавляем анимации по погоде
+        if(data.background==='Rain') createRain();
+        else if(data.background==='Snow') createSnow();
+        else if(data.background==='clouds'){
+            createClouds(6);
+            createBirds(2);
+        }
+        else if(data.background==='sun'){
+            createSun();
+            createBirds(3);
+        }
+
+        document.getElementById('result').innerHTML=`
+            <h3>${data.city}</h3>
+            <img src="https://openweathermap.org/img/wn/${data.icon}@2x.png">
+            <div>${data.temp} °C</div>
+            <div>${data.description}</div>
+            <b>${data.message}</b>
+        `;
+        document.getElementById('history').textContent = 'История: ' + data.history.join(', ');
+
+    } catch(e){
+        document.getElementById('result').textContent = 'Ошибка сервера';
+        console.error(e);
+    }
+}
+</script>
+
+</body>
+</html>
